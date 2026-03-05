@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍔 햄버거 강의 설계 도우미</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Playfair+Display:wght@700&display=swap');
+
+  :root {
+    --bun-top: #C8702A;
+    --sesame: #F5DEB3;
+    --lettuce: #4A7C59;
+    --tomato: #C0392B;
+    --cheese: #F0A500;
+    --patty: #5C3317;
+    --bun-bot: #D4883A;
+    --bg: #FFF8F0;
+    --text: #2C1810;
+    --muted: #8B6355;
+    --card: #FFFFFF;
+    --border: #E8D5C4;
+    --accent: #E67E22;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #2C1810 0%, #5C3317 50%, #8B4513 100%);
+    padding: 32px 24px 28px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 30% 50%, rgba(240,165,0,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 30%, rgba(200,112,42,0.2) 0%, transparent 50%);
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(22px, 5vw, 38px);
+    color: #F5DEB3;
+    letter-spacing: -0.5px;
+    position: relative;
+  }
+  header p {
+    color: rgba(245,222,179,0.7);
+    font-size: 13px;
+    margin-top: 6px;
+    font-weight: 300;
+    position: relative;
+  }
+  .burger-icon {
+    font-size: 40px;
+    display: block;
+    margin-bottom: 10px;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  /* LAYOUT */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  /* STEP TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    background: var(--border);
+    padding: 4px;
+    border-radius: 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 1;
+    min-width: 80px;
+    padding: 10px 8px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    font-family: 'Noto Sans KR', sans-serif;
+    line-height: 1.3;
+  }
+  .tab.active {
+    background: var(--card);
+    color: var(--text);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    font-weight: 700;
+  }
+  .tab .tab-icon { display: block; font-size: 18px; margin-bottom: 2px; }
+
+  /* LAYER CARD */
+  .layer-card {
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 20px;
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .layer-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+
+  .layer-bun-top { background: linear-gradient(135deg, #FFF3E0, #FFE0B2); border-color: var(--bun-top); }
+  .layer-lettuce  { background: linear-gradient(135deg, #E8F5E9, #C8E6C9); border-color: var(--lettuce); }
+  .layer-tomato   { background: linear-gradient(135deg, #FFEBEE, #FFCDD2); border-color: var(--tomato); }
+  .layer-cheese   { background: linear-gradient(135deg, #FFFDE7, #FFF9C4); border-color: var(--cheese); }
+  .layer-patty    { background: linear-gradient(135deg, #EFEBE9, #D7CCC8); border-color: var(--patty); }
+  .layer-bun-bot  { background: linear-gradient(135deg, #FFF3E0, #FFE0B2); border-color: var(--bun-bot); }
+
+  .layer-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .layer-emoji { font-size: 24px; }
+  .layer-title { font-size: 15px; font-weight: 700; }
+  .layer-subtitle { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+  /* FORM ELEMENTS */
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    margin-top: 14px;
+  }
+  label:first-of-type { margin-top: 0; }
+
+  input[type="text"], textarea, select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid rgba(0,0,0,0.15);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+    background: rgba(255,255,255,0.8);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    resize: vertical;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(230,126,34,0.15);
+  }
+  textarea { min-height: 80px; }
+
+  /* BRAIN TIP BOX */
+  .brain-tip {
+    background: rgba(255,255,255,0.6);
+    border-left: 3px solid;
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    margin-top: 10px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #555;
+  }
+  .brain-tip strong { color: var(--text); }
+
+  /* TECHNIQUE CHIPS */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1.5px solid;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: white;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  .chip:hover { transform: scale(1.04); }
+  .chip.selected { color: white !important; }
+  .chip-green  { border-color: var(--lettuce); color: var(--lettuce); }
+  .chip-green.selected  { background: var(--lettuce); }
+  .chip-red    { border-color: var(--tomato); color: var(--tomato); }
+  .chip-red.selected    { background: var(--tomato); }
+  .chip-amber  { border-color: var(--cheese); color: #B8860B; }
+  .chip-amber.selected  { background: var(--cheese); }
+  .chip-brown  { border-color: var(--patty); color: var(--patty); }
+  .chip-brown.selected  { background: var(--patty); }
+
+  /* BUTTONS */
+  .btn-row { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+  .btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 13px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--bun-top));
+    color: white;
+    box-shadow: 0 4px 14px rgba(200,112,42,0.4);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(200,112,42,0.5); }
+  .btn-secondary {
+    background: white;
+    color: var(--text);
+    border: 1.5px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--bg); }
+
+  /* OUTPUT SECTION */
+  #output-section {
+    display: none;
+    animation: fadeUp 0.4s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .output-card {
+    background: linear-gradient(135deg, #2C1810, #4A2010);
+    border-radius: 20px;
+    padding: 28px 24px;
+    color: #F5DEB3;
+    position: relative;
+    overflow: hidden;
+  }
+  .output-card::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    background: radial-gradient(circle, rgba(240,165,0,0.15), transparent);
+    border-radius: 50%;
+  }
+  .output-card h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .prompt-block {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(245,222,179,0.2);
+    border-radius: 12px;
+    padding: 18px;
+    font-size: 13px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-break: break-word;
+    position: relative;
+    color: rgba(245,222,179,0.9);
+  }
+
+  .copy-btn {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: rgba(240,165,0,0.2);
+    border: 1px solid rgba(240,165,0,0.4);
+    color: var(--cheese);
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover { background: rgba(240,165,0,0.3); }
+
+  /* SECTION DIVIDER */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 16px;
+  }
+  .section-header h3 { font-size: 16px; font-weight: 700; }
+  .section-header::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* HAMBURGER VISUAL */
+  .burger-visual {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 20px;
+    background: white;
+    border-radius: 18px;
+    border: 2px dashed var(--border);
+    margin-bottom: 24px;
+  }
+  .bv-layer {
+    width: 100%;
+    max-width: 360px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s;
+  }
+  .bv-bun-top { background: #C8702A; color: white; border-radius: 40px 40px 4px 4px; height: 36px; display: flex; align-items: center; justify-content: center; }
+  .bv-lettuce { background: #4A7C59; color: white; }
+  .bv-tomato  { background: #C0392B; color: white; }
+  .bv-cheese  { background: #F0A500; color: white; }
+  .bv-patty   { background: #5C3317; color: white; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+  .bv-bun-bot { background: #D4883A; color: white; border-radius: 4px 4px 30px 30px; height: 28px; display: flex; align-items: center; justify-content: center; }
+
+  /* PROGRESS */
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 4px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--cheese));
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+
+  /* PAGE PANELS */
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeUp 0.3s ease; }
+
+  /* RESPONSIVE */
+  @media (max-width: 480px) {
+    .tab { font-size: 10px; padding: 8px 4px; }
+    .tab .tab-icon { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="burger-icon">🍔</span>
+  <h1>햄버거 강의 설계 도우미</h1>
+  <p>뇌과학 기반 · 햄버거 설계법 · AI 프롬프트 생성기</p>
+</header>
+
+<div class="container">
+
+  <!-- PROGRESS -->
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width:16%"></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="showPanel(0)" id="tab0">
+      <span class="tab-icon">🎯</span>기본 설정
+    </button>
+    <button class="tab" onclick="showPanel(1)" id="tab1">
+      <span class="tab-icon">🍞</span>Top Bun
+    </button>
+    <button class="tab" onclick="showPanel(2)" id="tab2">
+      <span class="tab-icon">🥬</span>채소층
+    </button>
+    <button class="tab" onclick="showPanel(3)" id="tab3">
+      <span class="tab-icon">🥩</span>Patty
+    </button>
+    <button class="tab" onclick="showPanel(4)" id="tab4">
+      <span class="tab-icon">🍞</span>Bot Bun
+    </button>
+    <button class="tab" onclick="showPanel(5)" id="tab5">
+      <span class="tab-icon">✨</span>생성
+    </button>
+  </div>
+
+  <!-- PANEL 0: 기본 설정 -->
+  <div class="panel active" id="panel0">
+    <div class="burger-visual">
+      <div class="bv-layer bv-bun-top">🍞 TOP BUN — 주의 점화 · 호기심 유발</div>
+      <div class="bv-layer bv-lettuce">🥬 채소 — 배경 지식 · 연결 고리</div>
+      <div class="bv-layer bv-tomato">🍅 토마토 — 핵심 개념 제시</div>
+      <div class="bv-layer bv-cheese">🧀 치즈 — 심화 · 예시 · 적용</div>
+      <div class="bv-layer bv-patty">🥩 PATTY — 핵심 실습 · 연습</div>
+      <div class="bv-layer bv-bun-bot">🍞 BOT BUN — 정리 · 전이 · 다음 예고</div>
+    </div>
+
+    <div class="layer-card" style="background:white; border-color:var(--border)">
+      <div class="layer-label">
+        <span class="layer-emoji">📋</span>
+        <div>
+          <div class="layer-title">강의 기본 정보</div>
+          <div class="layer-subtitle">설계할 강의의 핵심 정보를 입력하세요</div>
+        </div>
+      </div>
+
+      <label>강의 주제 / 제목</label>
+      <input type="text" id="topic" placeholder="예: 파이썬 데이터 분석 기초 — pandas 입문" />
+
+      <label>대상 학습자</label>
+      <input type="text" id="audience" placeholder="예: 마케팅 담당자, 비개발자, 대학원생..." />
+
+      <label>강의 시간</label>
+      <select id="duration">
+        <option value="15분">15분 (마이크로 러닝)</option>
+        <option value="30분">30분 (집중 세션)</option>
+        <option value="50분" selected>50분 (표준 강의)</option>
+        <option value="90분">90분 (심화 강의)</option>
+        <option value="3시간">3시간 (워크숍)</option>
+      </select>
+
+      <label>학습 목표 (수업 후 학습자가 할 수 있는 것)</label>
+      <textarea id="objective" placeholder="예: 실제 CSV 데이터를 불러와 기초 통계를 산출하고 시각화할 수 있다"></textarea>
+
+      <label>사전 지식 수준</label>
+      <select id="priorKnowledge">
+        <option value="전혀 없음">전혀 없음 (완전 입문)</option>
+        <option value="기초 있음" selected>기초 있음 (개념만 알고 있음)</option>
+        <option value="중급">중급 (실무 경험 있음)</option>
+        <option value="고급">고급 (전문가 심화)</option>
+      </select>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="showPanel(1)">다음: TOP BUN 설계 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 1: TOP BUN -->
+  <div class="panel" id="panel1">
+    <div class="layer-card layer-bun-top">
+      <div class="layer-label">
+        <span class="layer-emoji">🍞</span>
+        <div>
+          <div class="layer-title">TOP BUN — 주의 점화 & 호기심 유발</div>
+          <div class="layer-subtitle">뇌의 편도체를 깨워 학습 모드로 전환시키는 오프닝</div>
+        </div>
+      </div>
+
+      <label>오프닝 훅 (Hook) — 첫 30~60초</label>
+      <textarea id="hook" placeholder="예: '여러분, 지난 주에 손으로 엑셀 계산하다가 실수한 적 있나요? 오늘 이 강의 끝나면 그런 일은 절대 없어집니다.'"></textarea>
+
+      <div class="brain-tip" style="border-color: var(--bun-top)">
+        🧠 <strong>뇌과학 근거:</strong> 감정적 각성(편도체 활성화)은 해마의 기억 인코딩을 최대 40% 강화합니다. 충격적 통계, 공감 가는 실패 스토리, 역설적 질문이 효과적입니다.
+      </div>
+
+      <label>학습 목표 공유 방식</label>
+      <div class="chips">
+        <button class="chip chip-green" onclick="toggleChip(this)">📌 칠판/슬라이드 게시</button>
+        <button class="chip chip-green" onclick="toggleChip(this)">🗣️ 구두 선언</button>
+        <button class="chip chip-green" onclick="toggleChip(this)">✋ 손들기 퀴즈</button>
+        <button class="chip chip-green" onclick="toggleChip(this)">🃏 카드 활동</button>
+      </div>
+
+      <label>사전 지식 활성화 전략 (Prior Knowledge Activation)</label>
+      <div class="chips">
+        <button class="chip chip-amber" onclick="toggleChip(this)">💬 짝 토론 (Think-Pair)</button>
+        <button class="chip chip-amber" onclick="toggleChip(this)">📊 손들기 투표</button>
+        <button class="chip chip-amber" onclick="toggleChip(this)">🧩 브레인스토밍</button>
+        <button class="chip chip-amber" onclick="toggleChip(this)">❓ 개방형 질문</button>
+        <button class="chip chip-amber" onclick="toggleChip(this)">📱 실시간 Poll</button>
+      </div>
+
+      <label>오프닝에 추가할 특이 요소 (선택)</label>
+      <input type="text" id="openingExtra" placeholder="예: 실패 영상 클립 1분 / 놀라운 통계 데이터 / 도발적인 질문" />
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="showPanel(0)">← 이전</button>
+        <button class="btn btn-primary" onclick="showPanel(2)">다음: 채소층 설계 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 2: 채소층 + 패티 준비 -->
+  <div class="panel" id="panel2">
+    <!-- 채소층 -->
+    <div class="layer-card layer-lettuce">
+      <div class="layer-label">
+        <span class="layer-emoji">🥬</span>
+        <div>
+          <div class="layer-title">레터스 — 배경 지식 & 맥락 연결</div>
+          <div class="layer-subtitle">새 정보와 기존 스키마를 연결하는 브릿지</div>
+        </div>
+      </div>
+      <label>이 주제의 "왜 중요한가" (실생활 연결)</label>
+      <textarea id="whyItMatters" placeholder="예: 매달 30분씩 걸리던 데이터 집계를 단 3줄 코드로 해결 — 실제 절약 시간 계산해보기"></textarea>
+      <div class="brain-tip" style="border-color: var(--lettuce)">
+        🧠 <strong>관련성 원칙:</strong> 학습자의 기존 뇌 회로에 새 내용을 연결할수록 해마 장기기억 전환율이 높아집니다. "이미 아는 것"과 "새 것"의 비율은 7:3이 최적입니다.
+      </div>
+    </div>
+
+    <!-- 토마토층 -->
+    <div class="layer-card layer-tomato">
+      <div class="layer-label">
+        <span class="layer-emoji">🍅</span>
+        <div>
+          <div class="layer-title">토마토 — 핵심 개념 & 용어 정의</div>
+          <div class="layer-subtitle">인지 부하를 줄이는 청크화된 개념 제시</div>
+        </div>
+      </div>
+      <label>핵심 개념 (최대 5개, 쉼표 구분)</label>
+      <input type="text" id="keyConcepts" placeholder="예: DataFrame, Series, loc/iloc, groupby, merge" />
+      <label>개념 설명 방식</label>
+      <div class="chips">
+        <button class="chip chip-red" onclick="toggleChip(this)">📐 시각적 다이어그램</button>
+        <button class="chip chip-red" onclick="toggleChip(this)">🎭 비유/메타포</button>
+        <button class="chip chip-red" onclick="toggleChip(this)">📹 짧은 데모</button>
+        <button class="chip chip-red" onclick="toggleChip(this)">🔄 단계별 분해</button>
+        <button class="chip chip-red" onclick="toggleChip(this)">🗂️ 개념 지도</button>
+      </div>
+      <div class="brain-tip" style="border-color: var(--tomato)">
+        🧠 <strong>청킹 원칙:</strong> 작업 기억(워킹 메모리)은 한 번에 7±2개만 처리합니다. 핵심 개념은 3~5개로 제한하고, 각각 구체적 예시와 묶어 제시하세요.
+      </div>
+    </div>
+
+    <!-- 치즈층 -->
+    <div class="layer-card layer-cheese">
+      <div class="layer-label">
+        <span class="layer-emoji">🧀</span>
+        <div>
+          <div class="layer-title">치즈 — 심화 예시 & 적용 시나리오</div>
+          <div class="layer-subtitle">추상 → 구체 → 다시 추상 사이클</div>
+        </div>
+      </div>
+      <label>주요 예시 / 사례 (실무 적용)</label>
+      <textarea id="examples" placeholder="예: 실제 공개 데이터셋(서울시 따릉이 데이터)으로 월별 이용 패턴 분석 라이브 코딩"></textarea>
+      <label>오개념 방지 포인트 (학생들이 자주 헷갈리는 것)</label>
+      <input type="text" id="misconceptions" placeholder="예: loc vs iloc 혼용, inplace 파라미터 오해" />
+      <div class="brain-tip" style="border-color: var(--cheese)">
+        🧠 <strong>정교화 효과:</strong> "왜 그럴까?" 질문과 실제 사례를 결합할 때 전두엽 심층 처리가 활성화되어 장기 기억 전환율이 2배 이상 높아집니다.
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="showPanel(1)">← 이전</button>
+      <button class="btn btn-primary" onclick="showPanel(3)">다음: PATTY 설계 →</button>
+    </div>
+  </div>
+
+  <!-- PANEL 3: PATTY -->
+  <div class="panel" id="panel3">
+    <div class="layer-card layer-patty">
+      <div class="layer-label">
+        <span class="layer-emoji">🥩</span>
+        <div>
+          <div class="layer-title">PATTY — 핵심 실습 & 능동적 처리</div>
+          <div class="layer-subtitle">인출 연습으로 장기기억을 고정시키는 메인 디시</div>
+        </div>
+      </div>
+
+      <label>주요 실습 활동 유형</label>
+      <div class="chips">
+        <button class="chip chip-brown" onclick="toggleChip(this)">💻 코딩 실습</button>
+        <button class="chip chip-brown" onclick="toggleChip(this)">🧩 문제 해결 과제</button>
+        <button class="chip chip-brown" onclick="toggleChip(this)">👥 협력 프로젝트</button>
+        <button class="chip chip-brown" onclick="toggleChip(this)">📝 개념 매핑</button>
+        <button class="chip chip-brown" onclick="toggleChip(this)">🎮 퀴즈 게임</button>
+        <button class="chip chip-brown" onclick="toggleChip(this)">🔬 케이스 분석</button>
+        <button class="chip chip-brown" onclick="toggleChip(this)">🗣️ 가르치기 활동</button>
+        <button class="chip chip-brown" onclick="toggleChip(this)">✍️ 성찰 저널</button>
+      </div>
+
+      <label>핵심 실습 내용 (구체적으로)</label>
+      <textarea id="practiceContent" placeholder="예: 제공된 CSV 파일을 불러와 결측치를 처리하고, 지역별 평균을 계산해 막대 그래프로 시각화하기 (15분 개인 실습 후 짝 비교)"></textarea>
+
+      <label>형성평가 / 피드백 전략</label>
+      <div class="chips">
+        <button class="chip chip-brown" onclick="toggleChip(this)">🚦 신호등 카드</button>
+        <button class="chip chip-brown" onclick="toggleChip(this)">📊 즉각 퀴즈</button>
+        <button class="chip chip-brown" onclick="toggleChip(this)">👥 피어 리뷰</button>
+        <button class="chip chip-brown" onclick="toggleChip(this)">💬 교수자 순회</button>
+        <button class="chip chip-brown" onclick="toggleChip(this)">📱 플리커스/카훗</button>
+      </div>
+
+      <label>학습 어려움 시 지원 계획</label>
+      <input type="text" id="supportPlan" placeholder="예: 힌트 카드 3단계 제공 / TA 도움 요청 신호 / 단계별 해설 영상 QR 제공" />
+
+      <div class="brain-tip" style="border-color: var(--patty)">
+        🧠 <strong>인출 연습 효과:</strong> 배운 내용을 다시 꺼내 쓰는 행위(Retrieval Practice)는 단순 복습보다 장기 기억 보유율을 50% 이상 높입니다. 실습 → 오류 → 피드백 사이클이 핵심입니다.
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="showPanel(2)">← 이전</button>
+        <button class="btn btn-primary" onclick="showPanel(4)">다음: BOT BUN 설계 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 4: BOT BUN -->
+  <div class="panel" id="panel4">
+    <div class="layer-card layer-bun-bot">
+      <div class="layer-label">
+        <span class="layer-emoji">🍞</span>
+        <div>
+          <div class="layer-title">BOT BUN — 정리 & 전이 & 다음 예고</div>
+          <div class="layer-subtitle">학습의 고착화와 전이를 유도하는 클로징</div>
+        </div>
+      </div>
+
+      <label>정리 활동 방식</label>
+      <div class="chips">
+        <button class="chip chip-amber" onclick="toggleChip(this)">✍️ Exit Ticket</button>
+        <button class="chip chip-amber" onclick="toggleChip(this)">🔄 3-2-1 성찰</button>
+        <button class="chip chip-amber" onclick="toggleChip(this)">🗺️ 개념 지도 완성</button>
+        <button class="chip chip-amber" onclick="toggleChip(this)">👥 짝 요약 발표</button>
+        <button class="chip chip-amber" onclick="toggleChip(this)">📝 핵심 한 문장</button>
+      </div>
+
+      <label>실생활 전이 과제 (Take-home 과제)</label>
+      <textarea id="transferTask" placeholder="예: 본인 업무 데이터에서 가장 많이 반복하는 집계 작업 하나를 pandas로 자동화해 오기 (다음 시간 5분 공유)"></textarea>
+
+      <label>다음 강의 예고 / 호기심 유발 클리프행어</label>
+      <input type="text" id="nextPreview" placeholder="예: '다음 시간엔 이 코드 3줄로 웹에서 실시간 데이터를 긁어올 겁니다. 어떻게 가능할까요?'" />
+
+      <label>강의 분위기 마무리 방식</label>
+      <div class="chips">
+        <button class="chip chip-green" onclick="toggleChip(this)">👏 성취 공유</button>
+        <button class="chip chip-green" onclick="toggleChip(this)">🙏 감사 표현</button>
+        <button class="chip chip-green" onclick="toggleChip(this)">🌟 Best 공유</button>
+        <button class="chip chip-green" onclick="toggleChip(this)">🤝 동료 칭찬</button>
+      </div>
+
+      <div class="brain-tip" style="border-color: var(--bun-bot)">
+        🧠 <strong>간격 효과 & 전이:</strong> 수업 직후 10분이 기억 고착화의 골든타임입니다. 정리 활동은 수업 중 최소 5~8분을 확보하고, 다음 수업 초반 2~3분 간단 복습으로 간격 효과를 극대화하세요.
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="showPanel(3)">← 이전</button>
+        <button class="btn btn-primary" onclick="showPanel(5)">다음: 프롬프트 생성 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 5: 생성 -->
+  <div class="panel" id="panel5">
+    <div class="layer-card" style="background:white; border-color:var(--border)">
+      <div class="layer-label">
+        <span class="layer-emoji">✨</span>
+        <div>
+          <div class="layer-title">AI 강의 설계 프롬프트 생성</div>
+          <div class="layer-subtitle">입력한 정보로 맞춤형 Claude 프롬프트를 만듭니다</div>
+        </div>
+      </div>
+      <p style="font-size:13px; color:var(--muted); line-height:1.7;">
+        아래 버튼을 누르면 입력하신 모든 정보를 바탕으로 <strong>뇌과학 기반 햄버거 강의 설계 전문가 프롬프트</strong>가 자동 생성됩니다.<br>
+        생성된 프롬프트를 Claude에 붙여 넣으면 완성된 강의 계획서를 받을 수 있습니다.
+      </p>
+      <div class="btn-row" style="margin-top:20px">
+        <button class="btn btn-secondary" onclick="showPanel(4)">← 이전</button>
+        <button class="btn btn-primary" onclick="generatePrompt()">🎉 프롬프트 생성하기</button>
+      </div>
+    </div>
+
+    <div id="output-section">
+      <div class="section-header">
+        <h3>생성된 강의 설계 프롬프트</h3>
+      </div>
+      <div class="output-card">
+        <h2>📋 Claude 프롬프트</h2>
+        <div style="position:relative">
+          <div class="prompt-block" id="promptOutput"></div>
+          <button class="copy-btn" onclick="copyPrompt()">📋 복사</button>
+        </div>
+      </div>
+
+      <div class="section-header" style="margin-top:32px">
+        <h3>햄버거 구조 요약</h3>
+      </div>
+      <div id="summaryCards"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let currentPanel = 0;
+const totalPanels = 6;
+
+function showPanel(idx) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel' + idx).classList.add('active');
+  document.getElementById('tab' + idx).classList.add('active');
+  currentPanel = idx;
+  document.getElementById('progressFill').style.width = ((idx + 1) / totalPanels * 100) + '%';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleChip(el) {
+  el.classList.toggle('selected');
+}
+
+function getSelectedChips(panelId) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return [];
+  return [...panel.querySelectorAll('.chip.selected')].map(c => c.textContent.trim());
+}
+
+function val(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function generatePrompt() {
+  const topic = val('topic') || '(주제 미입력)';
+  const audience = val('audience') || '일반 성인 학습자';
+  const duration = val('duration') || '50분';
+  const objective = val('objective') || '(목표 미입력)';
+  const priorKnowledge = val('priorKnowledge') || '기초 있음';
+  const hook = val('hook') || '(훅 미입력)';
+  const whyItMatters = val('whyItMatters') || '';
+  const keyConcepts = val('keyConcepts') || '';
+  const examples = val('examples') || '';
+  const misconceptions = val('misconceptions') || '';
+  const practiceContent = val('practiceContent') || '';
+  const supportPlan = val('supportPlan') || '';
+  const transferTask = val('transferTask') || '';
+  const nextPreview = val('nextPreview') || '';
+  const openingExtra = val('openingExtra') || '';
+
+  const pka = getSelectedChips('panel1');
+  const conceptMethods = getSelectedChips('panel2');
+  const practiceTypes = getSelectedChips('panel3');
+  const formativeEval = getSelectedChips('panel3');
+  const closingMethods = getSelectedChips('panel4');
+
+  const prompt = `당신은 뇌과학 기반 학습 설계 전문가입니다. 아래 정보를 바탕으로 햄버거 설계법에 따른 완성도 높은 강의 계획서를 작성해주세요.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📌 강의 기본 정보
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• 강의 주제: ${topic}
+• 대상 학습자: ${audience}
+• 강의 시간: ${duration}
+• 학습 목표: ${objective}
+• 사전 지식 수준: ${priorKnowledge}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🍔 햄버거 설계법 구성 요소
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🍞 [TOP BUN] 주의 점화 & 호기심 유발
+• 오프닝 훅: ${hook}
+${openingExtra ? `• 특이 요소: ${openingExtra}` : ''}
+• 사전 지식 활성화 전략: ${pka.length > 0 ? pka.join(', ') : '교수자 판단에 따라 선택'}
+
+🥬 [레터스] 배경 지식 & 맥락 연결
+• 관련성 제시: ${whyItMatters}
+
+🍅 [토마토] 핵심 개념 제시
+• 핵심 개념: ${keyConcepts}
+• 설명 방식: ${conceptMethods.length > 0 ? conceptMethods.join(', ') : '시각 자료 + 예시 병행'}
+• 오개념 방지: ${misconceptions}
+
+🧀 [치즈] 심화 예시 & 적용
+• 실제 사례/예시: ${examples}
+
+🥩 [PATTY] 핵심 실습 & 능동적 처리
+• 실습 유형: ${practiceTypes.length > 0 ? practiceTypes.join(', ') : '실습 활동'}
+• 실습 내용: ${practiceContent}
+• 지원 계획: ${supportPlan}
+
+🍞 [BOT BUN] 정리 & 전이 & 예고
+• 정리 방식: ${closingMethods.length > 0 ? closingMethods.join(', ') : 'Exit Ticket'}
+• 전이 과제: ${transferTask}
+• 다음 강의 예고: ${nextPreview}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📝 강의 계획서 작성 요청사항
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+위 정보를 바탕으로 다음을 포함한 상세 강의 계획서를 작성해주세요:
+
+1. 시간 배분표 (햄버거 레이어별 분 단위 배분)
+2. 각 단계별 교수자 발화 스크립트 예시
+3. 학습자 활동 지시문
+4. 형성평가 문항 3개 (선택형 1 + 단답형 1 + 적용형 1)
+5. 뇌과학 근거 설명 (각 단계의 학습 심리학적 배경)
+6. 잠재적 어려움 및 대응 전략
+7. 교수 자료 목록 (슬라이드, 핸드아웃, 실습 파일 등)
+
+출력 형식: 교육 현장에서 바로 사용 가능한 상세 계획서 형태로 작성해주세요.`;
+
+  document.getElementById('promptOutput').textContent = prompt;
+  document.getElementById('output-section').style.display = 'block';
+
+  // Summary cards
+  const layers = [
+    { emoji: '🍞', name: 'TOP BUN', color: '#C8702A', content: hook },
+    { emoji: '🥬', name: '레터스 (배경)', color: '#4A7C59', content: whyItMatters },
+    { emoji: '🍅', name: '토마토 (개념)', color: '#C0392B', content: keyConcepts },
+    { emoji: '🧀', name: '치즈 (심화)', color: '#F0A500', content: examples },
+    { emoji: '🥩', name: 'PATTY (실습)', color: '#5C3317', content: practiceContent },
+    { emoji: '🍞', name: 'BOT BUN', color: '#D4883A', content: transferTask },
+  ];
+
+  const sc = document.getElementById('summaryCards');
+  sc.innerHTML = layers.map(l => `
+    <div style="display:flex; gap:12px; align-items:flex-start; padding:12px 16px; margin-bottom:8px;
+         background:white; border-radius:12px; border-left:4px solid ${l.color}; box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+      <span style="font-size:22px; flex-shrink:0">${l.emoji}</span>
+      <div>
+        <div style="font-size:12px; font-weight:700; color:${l.color}; margin-bottom:3px">${l.name}</div>
+        <div style="font-size:13px; color:#555; line-height:1.6">${l.content || '(미입력)'}</div>
+      </div>
+    </div>
+  `).join('');
+
+  setTimeout(() => {
+    document.getElementById('output-section').scrollIntoView({ behavior: 'smooth' });
+  }, 100);
+}
+
+function copyPrompt() {
+  const text = document.getElementById('promptOutput').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = '✅ 복사됨!';
+    setTimeout(() => btn.textContent = '📋 복사', 2000);
+  });
+}
+</script>
+</body>
+</html>
